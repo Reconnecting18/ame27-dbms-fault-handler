@@ -22,11 +22,16 @@ void Init(void)
 {
     /* TODO: SDC is normally-open. Leave it open until the first Iter()
      *       has proven the pack is safe. Zero all state. */
+    HAL_SETSDC() = 1 /*SDC is open*/
+
 }
 
 void Iter(void)
 {
     /* 1. Read cell data into two local float arrays of N_CELLS.          */
+    for (int i = 0; i++) {
+        
+    }
 
     /* 2. Evaluate the 5 faults into a local `active` byte:
      *      - walk the arrays once, tracking max/min voltage & max temp

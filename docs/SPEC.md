@@ -5,6 +5,14 @@ Clean spec extracted from the official AME27 Embedded Systems Design Challenge
 challenge are included. This file is the source of truth for the project —
 do not consult the original PDF.
 
+## Ground rules (from the challenge header)
+
+1. AI use is allowed, but the interview will ask about the design process —
+   "overreliance on AI is easy to spot."
+2. The challenge is intentionally very open-ended; take time to learn concepts
+   you don't already know. You are the designer.
+3. It is based on a real project the team works on.
+
 ## Background
 
 You are designing the fault-handling system for a BMS (Battery Management
@@ -47,6 +55,14 @@ any ID in that range for the outgoing fault-status frame.
 | DIAGNOSTIC_HEARTBEAT | 0x1CD | 1 Hz while tool connected | No data. Optional — use or ignore |
 | FAULTS_CLEAR | 0x1CF | On demand (from diagnostic tool) | No data. Clear latched faults on receipt, unless the faulting condition is still present |
 
+## Shutdown circuit
+
+The SDC is a single circuit through all the E-stops and safety devices on the
+car, controlling the battery pack's isolation relays. "Opening" the SDC turns
+off the high-voltage pack directly. "Closing" it allows the pack to energize,
+assuming every other safety device in the chain is also closed. `HAL_SetSDC`
+is the abstraction for it.
+
 ## Task
 
 Every `Iter` cycle (~20 Hz): read cell data, check for faults, update SDC
@@ -65,7 +81,9 @@ frame rather than several, to limit bus traffic.
 ## Deliverables
 
 A PDF documenting design decisions, supporting reasoning, and the CAN frame
-format chosen, plus a link to the code (GitHub is fine).
+format chosen, plus a link to the code (GitHub or Google Drive — make sure
+the team has access). Any assumptions made must be outlined in the
+submission.
 
 ## Optional bonus ideas (not required)
 
@@ -78,6 +96,10 @@ format chosen, plus a link to the code (GitHub is fine).
 ## Provided code
 
 ### hal.h
+
+"Hardware Abstraction Layer" — wraps the BMS hardware. There is no
+implementation for these functions; applicants are encouraged to implement
+them however necessary to test their code (that is what `test/mock_hal.c` is).
 
 ```c
 #ifndef _HAL_H_
