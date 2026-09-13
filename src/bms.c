@@ -22,16 +22,52 @@ void Init(void)
 {
     /* TODO: SDC is normally-open. Leave it open until the first Iter()
      *       has proven the pack is safe. Zero all state. */
-    HAL_SETSDC() = 1 /*SDC is open*/
+    HAL_SetSDC(true);  /*SDC is open*/
 
 }
 
 void Iter(void)
 {
-    /* 1. Read cell data into two local float arrays of N_CELLS.          */
-    for (int i = 0; i++) {
-        
+    float HAL_ReadVoltages[N_CELLS];
+    float HAL_ReadTemperatures[N_CELLS];
+
+    for (int i = 0; i < N_CELLS; i++) { /*130 cells in battery pack, must iterate through each one*/
+        /*Go through different fault cases*/
+        /*over-voltage*/
+        if (HAL_ReadVoltages[i]>4.2) {
+            HAL_SetSDC(false);
+        }
+        /*under-voltage*/
+        if (HAL_ReadVoltages[i]<2.5) {
+            HAL_SetSDC(false);
+        }
+
+        /*over-temp*/
+        if (HAL_ReadTemperatures[i] > 60) {
+            HAL_SetSDC(false);
+        }
+        /*delta exceeded*/
+        float max_voltage = HAL_ReadVoltages[i];
+        float min_voltage = HAL_ReadVoltages[i];
+
+        /*Determine the biggest voltage and the smallest voltage in the battery pack*/
+        for (int k = 0; k < N_CELLS; k++) {
+            if (HAL_ReadVoltages[k] > max_voltage) {
+                max_voltage = HAL_ReadVoltages[k];
+            }
+            if (HAL_ReadVoltages[k] < min_voltage) {
+                min_voltage = HAL_ReadVoltages[k];
+            }
+        }
+        if (max_voltage-min_voltage > 0.2) {
+            HAL_SetSDC(false);
+        }
+        /*over-current*/
+         /*Sensor to measure amps? IF not we need to determine if its in watts or resistance (ohms)*/
     }
+
+    /* 1. Read cell data into two local float arrays of N_CELLS.          */
+
 
     /* 2. Evaluate the 5 faults into a local `active` byte:
      *      - walk the arrays once, tracking max/min voltage & max temp
