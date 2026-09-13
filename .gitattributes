@@ -1,0 +1,3 @@
+# Force LF everywhere: the repo lives on Windows but is built from WSL,
+# and GNU Make / bash choke on CRLF.
+* text=auto eol=lf
