@@ -101,18 +101,37 @@ TEST(delta_exceeded_opens_sdc) {
     return 1;
 }
 
+TEST(clear_request_after_recovery_closes_sdc) {
+    Init();
+    mock_set_voltage(42, CELL_OV_THRESHOLD_V + 0.05f);
+    Iter();
+    mock_set_voltage(42, 3.7f);
+    mock_inject_faults_clear();
+    RxCan();
+    Iter();
+    ASSERT(mock_sdc_closed == true);
+    ASSERT(mock_can_tx_data[1] == 0);
+    return 1;
+}
+
+TEST(clear_request_with_fault_still_present_is_ignored) {
+    Init();
+    mock_set_voltage(42, CELL_OV_THRESHOLD_V + 0.05f);
+    Iter();
+    mock_inject_faults_clear();
+    RxCan();
+    Iter();
+    ASSERT(mock_sdc_closed == false);
+    ASSERT(mock_can_tx_data[1] & FAULT_CELL_OVER_VOLTAGE); /*OV switch is still on in the latched byte*/
+    return 1;
+}
+
 /*
  * Ethan — tests for you to write (one function each, then add a RUN line):
- *
- *   under_voltage_opens_sdc
- *   over_temperature_opens_sdc
- *   delta_exceeded_opens_sdc          (all cells fine individually, spread > 0.2 V)
  *   over_current_discharge_opens_sdc  (inject +200001 mA, RxCan(), Iter())
  *   over_current_charge_opens_sdc     (inject -200001 mA — your abs() assumption)
  *   negative_current_below_threshold_is_ok (inject -50000 mA — sign-extension check!)
  *   fault_stays_latched_after_condition_clears   (OV, Iter, fix cell, Iter -> still open)
- *   clear_request_with_fault_still_present_is_ignored
- *   clear_request_after_recovery_closes_sdc
  *   multiple_faults_set_multiple_bits
  */
 
@@ -123,6 +142,8 @@ int main(void)
     RUN(single_cell_over_voltage_opens_sdc);
     RUN(fault_stays_latched_after_condition_clears);
     RUN(delta_exceeded_opens_sdc);
+    RUN(clear_request_after_recovery_closes_sdc);
+    RUN(clear_request_with_fault_still_present_is_ignored);
 
     printf("\n%d tests, %d failed\n", g_run, g_failed);
     return g_failed ? 1 : 0;

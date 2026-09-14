@@ -15,7 +15,7 @@
  * `static` keeps these private to this file (no other .c file can see them).
  */
 /* TODO: volatile current reading (mA) written by RxCan, read by Iter   */
-/* TODO: volatile clear_requested flag written by RxCan, read by Iter    */
+static volatile bool s_clear_requested;
 static uint8_t s_latched; /*power on means no history*/
 
 void Init(void)
@@ -71,6 +71,10 @@ void Iter(void)
         active |= FAULT_CELL_DELTA_EXCEEDED;
     }
     s_latched |= active; /*copies tick's switches into memory, never clears anything*/
+    if (s_clear_requested) {
+        s_latched &= active;
+        s_clear_requested = false;
+    }
     /*closed = (is active qual to 0?)*/
     HAL_SetSDC(s_latched == 0); /*Decision - question that evaluates to true (true if no switch is on) or false (open, car dead)*/
     uint8_t frame[CAN_LEN] = {0}; /*73-75 are the reports, so it allows dashboards to listen for 0xB0, opens slot 0, turns on warning light*/
@@ -102,6 +106,13 @@ void RxCan(void)
     uint8_t data[CAN_LEN];
     uint16_t id;
     HAL_RecvCanMsg(&id, data);
+    switch (id) {
+        case CAN_ID_FAULTS_CLEAR:
+            s_clear_requested = true;
+            break;
+        default:
+            break;
+    }
 
     /* TODO: switch on id:
      *   CAN_ID_ISENSE_DATA  -> decode bytes 2..4 as a signed 24-bit
