@@ -16,15 +16,14 @@
  */
 /* TODO: volatile current reading (mA) written by RxCan, read by Iter   */
 /* TODO: volatile clear_requested flag written by RxCan, read by Iter    */
-/* TODO: latched fault byte (only Iter touches this — no volatile needed) */
+static uint8_t s_latched; /*power on means no history*/
 
 void Init(void)
 {
     /* TODO: SDC is normally-open. Leave it open until the first Iter()
      *       has proven the pack is safe. Zero all state. */
-    HAL_SetSDC(false);  /*SDC is open (car is off)*/
-    static uint8_t s_latched = 0; /*power on means no history*/
-
+    HAL_SetSDC(false);
+    s_latched = 0;
 }
 
 void Iter(void)
@@ -71,8 +70,9 @@ void Iter(void)
     }
     s_latched |= active; /*copies tick's switches into memory, never clears anything*/
     /*closed = (is active qual to 0?)*/
-    HAL_SetSDC(s_latched); /*Decision - question that evaluates to true (true if no switch is on) or false (open, car dead)*/
+    HAL_SetSDC(s_latched == 0); /*Decision - question that evaluates to true (true if no switch is on) or false (open, car dead)*/
     uint8_t frame[CAN_LEN] = {0}; /*73-75 are the reports, so it allows dashboards to listen for 0xB0, opens slot 0, turns on warning light*/
+    frame[0] = active;
     frame[1] = s_latched;            
     HAL_SendCanMsg(CAN_ID_BMS_FAULT_STATUS, frame); /*Shows driver why car died*/
 

@@ -48,6 +48,7 @@ TEST(init_leaves_sdc_open)
     Init();
     /* No Iter() yet -> nothing has proven the pack safe -> SDC must be open. */
     ASSERT(mock_sdc_closed == false);
+    ASSERT(mock_sdc_call_count >= 1);
     return 1;
 }
 
@@ -76,6 +77,19 @@ TEST(single_cell_over_voltage_opens_sdc)
     return 1;
 }
 
+TEST(fault_stays_latched_after_condition_clears)
+{
+    Init();
+    mock_set_voltage(42, CELL_OV_THRESHOLD_V + 0.05f);
+    Iter();
+    mock_set_voltage(42, 3.7f);
+    Iter();
+    ASSERT(mock_sdc_closed == false);
+    ASSERT(!(mock_can_tx_data[0] & FAULT_CELL_OVER_VOLTAGE));
+    ASSERT(mock_can_tx_data[1] & FAULT_CELL_OVER_VOLTAGE);
+    return 1;
+}
+
 /*
  * Ethan — tests for you to write (one function each, then add a RUN line):
  *
@@ -96,6 +110,7 @@ int main(void)
     RUN(init_leaves_sdc_open);
     RUN(healthy_pack_closes_sdc_and_reports_no_faults);
     RUN(single_cell_over_voltage_opens_sdc);
+    RUN(fault_stays_latched_after_condition_clears);
 
     printf("\n%d tests, %d failed\n", g_run, g_failed);
     return g_failed ? 1 : 0;
