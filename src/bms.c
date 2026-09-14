@@ -35,6 +35,10 @@ void Iter(void)
     float temperatures[N_CELLS];
     HAL_ReadTemperatures(temperatures);
 
+    float max_voltage = voltages[0];
+    float min_voltage = voltages[0];
+
+
     for (int i = 0; i < N_CELLS; i++) { /*130 cells in battery pack, must iterate through each one*/
         /*Go through different fault cases*/
         /*over-voltage*/
@@ -50,23 +54,21 @@ void Iter(void)
             active |= FAULT_CELL_OVER_TEMPERATURE;
         }
         /*delta exceeded*/
-        /*float max_voltage = voltages[i];
-        float min_voltage = voltages[i];
 
-        Determine the biggest voltage and the smallest voltage in the battery pack
-        for (int k = 0; k < N_CELLS; k++) {
-            if (voltages[k] > max_voltage) {
-                max_voltage = voltages[k];
-            }
-            if (voltages[k] < min_voltage) {
-                min_voltage = voltages[k];
-            }
+        /*Determine the biggest voltage and the smallest voltage in the battery pack*/
+        
+        if (voltages[i] > max_voltage) {
+            max_voltage = voltages[i];
         }
-        if (max_voltage-min_voltage > 0.2) {
-            HAL_SetSDC(false);
+        if (voltages[i] < min_voltage) {
+            min_voltage = voltages[i];
         }
-        over-current
-         Sensor to measure amps? IF not we need to determine if its in watts or resistance (ohms)*/
+
+        /*over-current*/
+        /*Sensor to measure amps? IF not we need to determine if its in watts or resistance (ohms)*/
+    }
+    if (max_voltage-min_voltage > CELL_DELTA_THRESHOLD_V) { /*determine if delta exceeds threshold*/
+        active |= FAULT_CELL_DELTA_EXCEEDED;
     }
     s_latched |= active; /*copies tick's switches into memory, never clears anything*/
     /*closed = (is active qual to 0?)*/
