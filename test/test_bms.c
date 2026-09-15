@@ -12,6 +12,7 @@
  * A test is a function that returns 1 on pass; ASSERT returns 0 on the
  * first failed condition and records where it happened.
  */
+
 #include <stdio.h>
 #include <string.h>
 #include "bms.h"

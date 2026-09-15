@@ -102,3 +102,4 @@ void RxCan(void)
         break;
     }
     }
+}
