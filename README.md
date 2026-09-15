@@ -17,43 +17,63 @@ Designing a fault-handling system for a battery management system
 
 ## Variables
 -	S_latched – the fault memory, one byte, survives between ticks
+    
     o	Written by Iter() | Read by Iter()
 
 -	S_current_mA (volatile) – last current reading (mA)
+    
     o	Written by RxCan | Read by Iter()
 
 -	S_clear_requested (volatile) – FAULTS_CLEAR frame arrived since last tick
+    
     o	Written by RxCan | Read by Iter()
 
 ## Fault Detection – Iter() evaluates all of them
 -	CELL_OVER_VOLTAGE
+    
     o	Condition – any cell > 4.2 V
+    
     o	Cell is being overcharged
+    
     o	Fire risk
 
 -	CELL_UNDER_VOLTAGE
+    
     o	Condition – any cell < 2.5 V
+   
     o	Cell is being drained too far
+    
     o	Perm damage, can short internally later
 
 -	CELL_OVER_TEMPERATURE
+    
     o	Any cell > 60 degrees Celsius
+    
     o	Cell is overheating
+    
     o	Thermal runaway
 
 -	CELL_DELTA_EXCEEDED
+    
     o	Max-min cell voltage > 0.2 V
+    
     o	Cell are drifting apart
+    
     o	One cell is weak/failing, pack is unbalanced, will hit OV/UV soon
 
 -	PACK_OVER_CURRENT
+    
     o	Abs(current) > 200 A
+    
     o	Too much current through pack
+    
     o	Wiring and cells heat up, cells can’t safely deliver
 
 ## Latching and Clearing
 -	Active = dangerous condition
+    
     o	Recomputed every 50 ms
+    
     o	No memory
 
 -	Latched = has fault fired at any point since last clear
