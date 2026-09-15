@@ -126,6 +126,36 @@ TEST(clear_request_with_fault_still_present_is_ignored) {
     return 1;
 }
 
+TEST(over_current_discharge_opens_sdc) {
+    Init();
+    mock_inject_current_mA(200001);
+    RxCan();
+    Iter();
+    ASSERT(mock_sdc_closed == false);
+    ASSERT(mock_can_tx_data[0] & FAULT_PACK_OVER_CURRENT);
+    return 1;
+}
+
+TEST(over_current_charge_opens_sdc) {
+    Init();
+    mock_inject_current_mA(-200001);
+    RxCan();
+    Iter();
+    ASSERT(mock_sdc_closed == false);
+    ASSERT(mock_can_tx_data[0] & FAULT_PACK_OVER_CURRENT);
+    return 1;
+}
+
+TEST(negative_current_below_threshold_is_ok) {
+    Init();
+    mock_inject_current_mA(-50000);
+    RxCan();
+    Iter();
+    ASSERT(mock_sdc_closed == true);
+    ASSERT(mock_can_tx_data[0] == 0);
+    return 1;
+}
+
 /*
  * Ethan — tests for you to write (one function each, then add a RUN line):
  *   over_current_discharge_opens_sdc  (inject +200001 mA, RxCan(), Iter())
@@ -144,6 +174,9 @@ int main(void)
     RUN(delta_exceeded_opens_sdc);
     RUN(clear_request_after_recovery_closes_sdc);
     RUN(clear_request_with_fault_still_present_is_ignored);
+    RUN(over_current_discharge_opens_sdc);
+    RUN(over_current_charge_opens_sdc);
+    RUN(negative_current_below_threshold_is_ok);
 
     printf("\n%d tests, %d failed\n", g_run, g_failed);
     return g_failed ? 1 : 0;

@@ -14,20 +14,22 @@
  * re-reads it from memory every time instead of caching it in a register.
  * `static` keeps these private to this file (no other .c file can see them).
  */
-/* TODO: volatile current reading (mA) written by RxCan, read by Iter   */
 static volatile bool s_clear_requested;
 static uint8_t s_latched; /*power on means no history*/
+static volatile int32_t s_current_mA;
 
 void Init(void)
 {
-    /* TODO: SDC is normally-open. Leave it open until the first Iter()
-     *       has proven the pack is safe. Zero all state. */
+    /*SDC is normally-open. Leave it open until the first Iter() confirms pack is safe*/
     HAL_SetSDC(false);
     s_latched = 0;
+    s_current_mA = 0;
+    s_clear_requested = false;
 }
 
 void Iter(void)
 {
+    int32_t current_mA = s_current_mA; /*snapshot*/
     uint8_t active = 0;
 
     float voltages[N_CELLS];
@@ -53,7 +55,6 @@ void Iter(void)
         if (temperatures[i] > CELL_OT_THRESHOLD_C) {
             active |= FAULT_CELL_OVER_TEMPERATURE;
         }
-        /*delta exceeded*/
 
         /*Determine the biggest voltage and the smallest voltage in the battery pack*/
         
@@ -67,8 +68,12 @@ void Iter(void)
         /*over-current*/
         /*Sensor to measure amps? IF not we need to determine if its in watts or resistance (ohms)*/
     }
+    /*delta exceeded*/
     if (max_voltage-min_voltage > CELL_DELTA_THRESHOLD_V) { /*determine if delta exceeds threshold*/
         active |= FAULT_CELL_DELTA_EXCEEDED;
+    }
+    if (current_mA > PACK_OC_THRESHOLD_MA || current_mA < -PACK_OC_THRESHOLD_MA) {
+        active |= FAULT_PACK_OVER_CURRENT;
     }
     s_latched |= active; /*copies tick's switches into memory, never clears anything*/
     if (s_clear_requested) {
@@ -81,22 +86,6 @@ void Iter(void)
     frame[0] = active;
     frame[1] = s_latched;            
     HAL_SendCanMsg(CAN_ID_BMS_FAULT_STATUS, frame); /*Shows driver why car died*/
-
-    /* 1. Read cell data into two local float arrays of N_CELLS.          */
-
-
-    /* 2. Evaluate the 5 faults into a local `active` byte:
-     *      - walk the arrays once, tracking max/min voltage & max temp
-     *      - OV / UV / OT / DELTA from those
-     *      - OC from the volatile current reading (abs value — see spec)   */
-
-    /* 3. latched |= active   (unconditionally remember anything new)     */
-
-    /* 4. if clear was requested: latched &= active; then clear the flag  */
-
-    /* 5. HAL_SetSDC(latched == 0)                                        */
-
-    /* 6. Build the 0xB0 frame: data[0]=active, data[1]=latched, rest 0.  */
 }
 
 void RxCan(void)
@@ -112,6 +101,14 @@ void RxCan(void)
             break;
         default:
             break;
+    case CAN_ID_ISENSE_DATA: {
+        int32_t raw = ((int32_t)data[2] << 16) | ((int32_t)data[3] << 8) | (int32_t)data[4]; /*Byte 3 lands at bits 15-8, so lowest bit goes to 8*/
+        if (raw & 0x800000) {
+            raw -= 0x1000000;
+        }
+        s_current_mA = raw;
+        break;
+    }
     }
 
     /* TODO: switch on id:
