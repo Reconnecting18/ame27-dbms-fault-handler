@@ -77,14 +77,19 @@ Designing a fault-handling system for a battery management system
     o	No memory
 
 -	Latched = has fault fired at any point since last clear
+    
     o	One byte survives between ticks
 
 -	S_latched |= active
+    
     o	Every tick
+    
     o	OR bool, 1 wins, never clears anything
 
 -	S_latched &= active
+    
     o	When clear is requested
+    
     o	AND bool, 0 wins, keeps only faults still present
 
 ## Shutdown Circuit Control (SDC)
@@ -122,27 +127,33 @@ Designing a fault-handling system for a battery management system
 
 -	Iter() reads s_current_mA once at the top of the tick into a local snapshot so if a new current frame arrives mid-tick, the 
     tick will keep working with the value it started with
+    
     o	Decision/Report always agree
 
 -	Iter reads the flag, acts, then resets it
 
 ## Assumptions
 -	Over-current is 2-sided
+    
     o	Spec says above 200 A, treats abs(current) > 200 A as the fault because charging current is equally dangerous to the battery cells
 
 -	Thresholds are strict
+    
     o	A cell at exactly 4.2 V or 60 °C is not a fault (>, not >=)
 
 -	Unknown CAN IDs are ignored
+    
     o	RxCan acts only on 0x511 and 0x1CF.
 
 -	DIAGNOSTIC_HEARTBEAT (1x1CD) is not used
 -	Init() explicitly opens SDC rather than relying on relay’s normally-open default
 
 -	Clear request is consumed on next Iter and not instantly
+    
     o	Worst case latency is one tick (50 ms)
 
 -	Current reading persists between frames
+    
     o	If sensor stops sending, Iter() keeps using last value
 
 ## Testing
@@ -150,7 +161,9 @@ Designing a fault-handling system for a battery management system
     hardware to test with
 
 -	test/mock_hal.c
+    
     o	implements every HAL_* function with settable sensor values and captured outputs (SDC state, last CAN frame)
 
 -	test/test_bms.c
+    
     o	runs scenario tests against the HAL_* functions
