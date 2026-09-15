@@ -1,19 +1,11 @@
 /*
  * bms.c — BMS fault handler
- *
- * Ethan: this is yours to fill in. The comments below are the plan from
- * docs/SPEC.md, broken into the order that matters. Build with `make`,
  * run the tests with `make test`, and step through with `make debug`.
 */
 #include "hal.h"
 #include "bms.h"
 
-/* ---- Shared state ---------------------------------------------------------
- * RxCan() is an interrupt and can fire between ANY two lines of Iter().
- * Anything RxCan writes and Iter reads must be `volatile` so the compiler
- * re-reads it from memory every time instead of caching it in a register.
- * `static` keeps these private to this file (no other .c file can see them).
- */
+
 static volatile bool s_clear_requested;
 static uint8_t s_latched; /*power on means no history*/
 static volatile int32_t s_current_mA;
@@ -110,10 +102,3 @@ void RxCan(void)
         break;
     }
     }
-
-    /* TODO: switch on id:
-     *   CAN_ID_ISENSE_DATA  -> decode bytes 2..4 as a signed 24-bit
-     *                          big-endian integer (mA), store it
-     *   CAN_ID_FAULTS_CLEAR -> set the clear_requested flag
-     *   anything else       -> ignore                                    */
-}

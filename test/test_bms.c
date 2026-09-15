@@ -158,10 +158,6 @@ TEST(negative_current_below_threshold_is_ok) {
 
 /*
  * Ethan — tests for you to write (one function each, then add a RUN line):
- *   over_current_discharge_opens_sdc  (inject +200001 mA, RxCan(), Iter())
- *   over_current_charge_opens_sdc     (inject -200001 mA — your abs() assumption)
- *   negative_current_below_threshold_is_ok (inject -50000 mA — sign-extension check!)
- *   fault_stays_latched_after_condition_clears   (OV, Iter, fix cell, Iter -> still open)
  *   multiple_faults_set_multiple_bits
  */
 
