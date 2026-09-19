@@ -157,11 +157,6 @@ TEST(negative_current_below_threshold_is_ok) {
     return 1;
 }
 
-/*
- * Ethan — tests for you to write (one function each, then add a RUN line):
- *   multiple_faults_set_multiple_bits
- */
-
 int main(void)
 {
     RUN(init_leaves_sdc_open);

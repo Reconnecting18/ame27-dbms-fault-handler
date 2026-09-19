@@ -57,8 +57,6 @@ void Iter(void)
             min_voltage = voltages[i];
         }
 
-        /*over-current*/
-        /*Sensor to measure amps? IF not we need to determine if its in watts or resistance (ohms)*/
     }
     /*delta exceeded*/
     if (max_voltage-min_voltage > CELL_DELTA_THRESHOLD_V) { /*determine if delta exceeds threshold*/
